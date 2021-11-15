@@ -1,36 +1,92 @@
-# Yolov5_for_NPU
+# 1. Version description
+yolov5 version Tags=v2.0, python version 3.7.5
 
-#### Description
-{**When you're done, you can delete the content in this README and update the file with details for others getting started with your repository**}
+# 2. Prepare the data set
 
-#### Software Architecture
-Software architecture description
+## 2.1 Download the coco2017 data set and decompress it. The decompressed directory is as follows:
 
-#### Installation
+```
+├── coco_data: #root directory
+     ├── train2017 #Training set pictures, about 118287
+     ├── val2017 #Validation set pictures, about 5000
+     └── annotations # annotation directory
+     ├── instances_train2017.json #The training set annotation file corresponding to target detection and segmentation tasks
+     ├── instances_val2017.json #Validation set annotation file corresponding to target detection and segmentation tasks
+     ├── captions_train2017.json
+     ├── captions_val2017.json
+     ├── person_keypoints_train2017.json
+     └── person_keypoints_val2017.json
+```
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+## 2.2 Generate yolov5 special annotation file
 
-#### Instructions
+(1) Copy coco/coco2yolo.py and coco/coco_class.txt in the code warehouse to coco_data**root directory**
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+(2) Run coco2yolo.py
 
-#### Contribution
+```
+python3 coco2yolo.py
+```
 
-1.  Fork the repository
-2.  Create Feat_xxx branch
-3.  Commit your code
-4.  Create Pull Request
+(3) After running the above script, train2017.txt and val2017.txt will be generated in coco_data **root directory**
 
+# 3. Configure the data set path
 
-#### Gitee Feature
+Modify the train field and val field in the data/coco.yaml file to point to the train2017.txt and val2017.txt generated in the previous section respectively, such as:
 
-1.  You can use Readme\_XXX.md to support different languages, such as Readme\_en.md, Readme\_zh.md
-2.  Gitee blog [blog.gitee.com](https://blog.gitee.com)
-3.  Explore open source project [https://gitee.com/explore](https://gitee.com/explore)
-4.  The most valuable open source project [GVP](https://gitee.com/gvp)
-5.  The manual of Gitee [https://gitee.com/help](https://gitee.com/help)
-6.  The most popular members  [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+```
+train: /data/coco_data/train2017.txt
+val: /data/coco_data/val2017.txt
+```
+
+# 4.GPU, CPU dependency
+Install python dependency package according to requirements-GPU.txt
+
+# 5. NPU dependency
+Install the python dependency package according to requirements.txt, and also need to install (NPU-driver.run, NPU-firmware.run, NPU-toolkit.run, torch-ascend.whl, apex.whl)
+
+# 6. Compile and install Opencv-python
+
+In order to get the best image processing performance, ***Please compile and install opencv-python instead of directly installing***. The compilation and installation steps are as follows:
+
+```
+export GIT_SSL_NO_VERIFY=true
+git clone https://github.com/opencv/opencv.git
+cd opencv
+mkdir -p build
+cd build
+cmake -D BUILD_opencv_python3=yes -D BUILD_opencv_python2=no -D PYTHON3_EXECUTABLE=/usr/local/python3.7.5/bin/python3.7m -D PYTHON3_INCLUDE_DIR=/usr/local/python3.7.5/include/python3.7m -D PYTHONARY =/usr/local/python3.7.5/lib/libpython3.7m.so -D PYTHON3_NUMPY_INCLUDE_DIRS=/usr/local/python3.7.5/lib/python3.7/site-packages/numpy/core/include -D PYTHON3_PACKAGES_PATH=/ usr/local/python3.7.5/lib/python3.7/site-packages -D PYTHON3_DEFAULT_EXECUTABLE=/usr/local/python3.7.5/bin/python3.7m ..
+make -j$nproc
+make install
+```
+
+# 7. NPU stand-alone single-card training instruction
+bash train_npu_1p.sh
+
+# 8. NPU stand-alone eight-card training instruction
+bash train_npu_8p_mp.sh
+
+# 9. NPU evalution instruction
+(1) Modify the parameter --coco_instance_path in evaluation_npu_1p.sh to the actual path in the data set. For example, modify the script to
+
+```
+python3.7 test.py --data /data/coco.yaml --coco_instance_path /data/coco/annotations/instances_val2017.json --img-size 672 --weight'yolov5_0.pt' --batch-size 32 - device npu --npu 0
+```
+
+(2) Start the evaluation
+
+```
+bash evaluation_npu_1p.sh
+```
+
+# 10. GPU stand-alone single-card training instructions
+python train.py --data coco.yaml --cfg yolov5x.yaml --weights'' --batch-size 32 --device 0
+
+# 11.GPU stand-alone eight-card training instruction
+python -m torch.distributed.launch --nproc_per_node 8 train.py --data coco.yaml --cfg yolov5x.yaml --weights'' --batch-size 256
+
+# 12.CPU instructions
+python train.py --data coco.yaml --cfg yolov5x.yaml --weights'' --batch-size 32 --device cpu
+
+# 13. Export onnx instruction
+python export_onnx.py --weights ./xxx.pt --img-size 640 --batch-size 1
