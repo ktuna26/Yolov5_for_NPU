@@ -90,3 +90,19 @@ python train.py --data coco.yaml --cfg yolov5x.yaml --weights'' --batch-size 32 
 
 # 13. Export onnx instruction
 python export_onnx.py --weights ./xxx.pt --img-size 640 --batch-size 1
+
+# 13. Reults
+
+## 13.1 NPU Traininig Performance
+
+| Model   | Size<br>(pixels) | NPU<br>Nums | Dataset   | Training<br>Data Nums  | Validation<br>Data Nums  | Batch<br>Size | Epochs   | FPS      | Total<br>Training Time<br>(H) |
+| :------:| :--------------: | :---------: | :-------: | :--------------------: | :----------------------: | :-----------: | :------: | :------: | :---------------------------: |
+| yolo5x  | 640              | 1           | COCO-2017 | 118287                 | 5000                     | 32            | 300      | 51.8     | 188.528                       |
+| yolo5x  | 640              | 8           | COCO-2017 | 118287                 | 5000                     | 256           | 300      | 400.5    | 27.287                        |
+
+## 13.2 NPU Inference Performance
+
+| Model     | Size<br>(pixels) | mAP<sup>val<br>0.0 : 1.0 | Speed<br>Atlas 300T<br>(ms)    |
+| :-------: | :--------------: | :----------------------: | :----------------------------: |
+| yolo5x-1p | 640              | yolo5x-1p                | 48.5                           |
+| yolo5x-8p | 640              | yolo5x-8p                | 50.3                           |
